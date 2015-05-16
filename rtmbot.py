@@ -59,7 +59,7 @@ class RtmBot(object):
                     if limiter == True:
                         time.sleep(.1)
                         limiter = False
-                    message = output[1].encode('ascii','ignore')
+                    message = output[1].encode('utf8')
                     channel.send_message("{}".format(message))
                     limiter = True
     def crons(self):
@@ -93,7 +93,8 @@ class Plugin(object):
         if 'crontable' in dir(self.module):
             for interval, function in self.module.crontable:
                 self.jobs.append(Job(interval, eval("self.module."+function)))
-            logging.info(self.module.crontable)
+            if len(self.module.crontable) > 0:
+                logging.info(self.module.crontable)
             self.module.crontable = []
         else:
             self.module.crontable = []
