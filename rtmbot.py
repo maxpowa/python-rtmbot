@@ -10,7 +10,9 @@ import os
 import sys
 import time
 import logging
+import daemon.pidfile
 
+from lockfile import LockTimeout
 from slackclient import SlackClient
 
 def dbg(debug_string):
@@ -182,7 +184,20 @@ if __name__ == "__main__":
     if config.has_key("DAEMON"):
         if config["DAEMON"]:
             import daemon
-            with daemon.DaemonContext():
+            pidfile = daemon.pidfile.PIDLockFile('/tmp/alfred.pid')
+            pidfile.timeout = 2
+            try:
+                pidfile.acquire()
+            except LockTimeout:
+                try:
+                    os.kill(pidfile.read_pid(), 0)
+                    print 'Process already running!'
+                    exit(1)
+                except OSError:
+                    pidfile.break_lock()
+
+            with daemon.DaemonContext(pidfile=pidfile ,working_directory=os.getcwd()):
                 main_loop()
+
     main_loop()
 
